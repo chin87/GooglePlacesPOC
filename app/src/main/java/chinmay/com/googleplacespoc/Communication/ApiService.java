@@ -1,6 +1,7 @@
 package chinmay.com.googleplacespoc.Communication;
 
 import chinmay.com.googleplacespoc.POJO.AutoCompleteGooglePlaces;
+import chinmay.com.googleplacespoc.POJO.GetPlacesResponse;
 import chinmay.com.googleplacespoc.POJO.NearBySearch;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -24,4 +25,9 @@ public interface ApiService {
 	Call<NearBySearch> getNearByResults(@Query("location") String lat,
 										@Query("keyword") String keyword,
 										@Query("key") String key);
+
+	@GET("nearbysearch/json")
+	Call<GetPlacesResponse> getPlaceDetails(@Query("location") String location,
+											@Query("radius") int radius,
+											@Query("key") String key);
 }

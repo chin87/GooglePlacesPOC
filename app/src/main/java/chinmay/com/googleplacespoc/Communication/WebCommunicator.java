@@ -1,7 +1,10 @@
 package chinmay.com.googleplacespoc.Communication;
 
 import android.location.Location;
+import android.text.TextUtils;
+import android.util.Log;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
@@ -11,10 +14,13 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import chinmay.com.googleplacespoc.POJO.AutoCompleteGooglePlaces;
 import chinmay.com.googleplacespoc.POJO.AutoCompletePlacesMessageEvent;
+import chinmay.com.googleplacespoc.POJO.GetPlacesMessageEvent;
+import chinmay.com.googleplacespoc.POJO.GetPlacesResponse;
 import chinmay.com.googleplacespoc.POJO.NearBySearch;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -86,7 +92,27 @@ public class WebCommunicator {
 			});
 	}
 
+	public static void getPhotosOfLocation(LatLng latLng) {
+		Retrofit retrofit = new Retrofit.Builder()
+				.baseUrl(PLACES_API_BASE)
+				.addConverterFactory(GsonConverterFactory.create())
+				.callbackExecutor(Executors.newSingleThreadExecutor())
+				.build();
 
+		ApiService requestInterface = retrofit.create(ApiService.class);
+		Call<GetPlacesResponse> call = requestInterface.getPlaceDetails(latLng.latitude+","+latLng.longitude, 500, API_KEY);
+		call.enqueue(new Callback<GetPlacesResponse>() {
+			@Override
+			public void onResponse(Call<GetPlacesResponse> call, Response<GetPlacesResponse> response) {
+				EventBus.getDefault().post(new GetPlacesMessageEvent(GetPlacesMessageEvent.SUCCESS, response.body()));
+			}
+
+			@Override
+			public void onFailure(Call<GetPlacesResponse> call, Throwable t) {
+				EventBus.getDefault().post(new GetPlacesMessageEvent(GetPlacesMessageEvent.FAIL, null));
+			}
+		});
+	}
 
 	private static Gson getGsonInstance(){
 		return new GsonBuilder().setExclusionStrategies(new  ExclusionStrategy() {

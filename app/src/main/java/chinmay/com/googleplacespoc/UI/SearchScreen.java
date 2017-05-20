@@ -1,7 +1,10 @@
 package chinmay.com.googleplacespoc.UI;
 
 import android.content.Context;
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -28,7 +31,6 @@ import java.util.List;
 import chinmay.com.googleplacespoc.Communication.WebCommunicator;
 import chinmay.com.googleplacespoc.POJO.AutoCompleteGooglePlaces;
 import chinmay.com.googleplacespoc.POJO.AutoCompletePlacesMessageEvent;
-import chinmay.com.googleplacespoc.POJO.NearBySearch;
 import chinmay.com.googleplacespoc.R;
 import chinmay.com.googleplacespoc.databinding.ActivitySearchScreenBinding;
 
@@ -44,16 +46,16 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		activitySearchScreenBinding = DataBindingUtil.setContentView(this, R.layout.activity_search_screen);
+		resultList = new ArrayList<>();
+		googlePlacesAutocompleteAdapter = new GooglePlacesAutocompleteAdapter(this, R.layout.list_item);
+		activitySearchScreenBinding.autoCompleteTextView.setAdapter(googlePlacesAutocompleteAdapter);
+		activitySearchScreenBinding.autoCompleteTextView.setOnItemClickListener(this);
 	}
 
 	@Override
 	protected void onStart() {
 		super.onStart();
 		EventBus.getDefault().register(this);
-		resultList = new ArrayList<>();
-		googlePlacesAutocompleteAdapter = new GooglePlacesAutocompleteAdapter(this, R.layout.list_item);
-		activitySearchScreenBinding.autoCompleteTextView.setAdapter(googlePlacesAutocompleteAdapter);
-		activitySearchScreenBinding.autoCompleteTextView.setOnItemClickListener(this);
 	}
 
 	private class GooglePlacesAutocompleteAdapter extends ArrayAdapter<String> implements Filterable {
@@ -262,7 +264,18 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 					placeObject.getLng() != 0 ) {
 				latLng = new LatLng(placeObject.getLat(), placeObject.getLng());
 			}
-		strNew = (String) adapterView.getItemAtPosition(position);
+			strNew = (String) adapterView.getItemAtPosition(position);
+			if( latLng == null ) {
+				latLng = getLatLngFromAddress(strNew);
+			}
+			if( latLng == null ) {
+				return;
+			}
+			Intent intent = new Intent(this, ResultScreen.class);
+			intent.putExtra(ResultScreen.KEY_LAT, ""+latLng.latitude );
+			intent.putExtra(ResultScreen.KEY_LNG, ""+latLng.longitude );
+			intent.putExtra(ResultScreen.KEY_ADDR, strNew );
+			startActivity(intent);
 		}catch(Exception e) {
 
 		}
@@ -283,4 +296,26 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 			Toast.makeText(this, "FAILED TO FETCH DATA", Toast.LENGTH_SHORT).show();
 		}
 	}
+
+	private LatLng getLatLngFromAddress( String address) {
+		LatLng latLong = null;
+		try {
+			Geocoder gc = new Geocoder(this);
+			int no_of_try = 0;
+			List<Address> addressList = new ArrayList<>();
+			do{
+				addressList = gc.getFromLocationName(address.toString(), 5);
+				no_of_try++;
+			}while( no_of_try <  3 && addressList.size() == 0);
+			if (addressList.size() > 0) {
+				double lat = (double) (addressList.get(0).getLatitude());
+				double lon = (double) (addressList.get(0).getLongitude());
+				latLong = new LatLng(lat, lon);
+			}
+		}catch( Exception e){
+			e.printStackTrace();
+		}
+		return latLong;
+	}
+
 }
