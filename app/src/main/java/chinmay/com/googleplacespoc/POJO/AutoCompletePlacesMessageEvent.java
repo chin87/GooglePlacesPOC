@@ -5,9 +5,19 @@ package chinmay.com.googleplacespoc.POJO;
  */
 
 public class AutoCompletePlacesMessageEvent {
-	public final String message;
+	public final int status;
+	public final AutoCompleteGooglePlaces response;
+	public static final int SUCCESS = 0;
+	public static final int FAIL = 1;
 
-	public AutoCompletePlacesMessageEvent(String message) {
-		this.message = message;
+	public AutoCompletePlacesMessageEvent(int status,
+										  AutoCompleteGooglePlaces response) {
+		this.status = status;
+		this.response = response;
 	}
+
+	public boolean isSuccess(){
+		return status == 0;
+	}
+
 }

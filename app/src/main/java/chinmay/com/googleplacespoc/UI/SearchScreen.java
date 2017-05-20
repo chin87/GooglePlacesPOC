@@ -16,6 +16,8 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
@@ -48,6 +50,7 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 	protected void onStart() {
 		super.onStart();
 		EventBus.getDefault().register(this);
+		resultList = new ArrayList<>();
 		googlePlacesAutocompleteAdapter = new GooglePlacesAutocompleteAdapter(this, R.layout.list_item);
 		activitySearchScreenBinding.autoCompleteTextView.setAdapter(googlePlacesAutocompleteAdapter);
 		activitySearchScreenBinding.autoCompleteTextView.setOnItemClickListener(this);
@@ -227,6 +230,9 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 			if(autoCompleteGooglePlaces != null &&
 					autoCompleteGooglePlaces.getPredictions() != null && autoCompleteGooglePlaces.getPredictions().size() > 0 ) {
 				List<AutoCompleteGooglePlaces.Predictions> predictions = autoCompleteGooglePlaces.getPredictions();
+				if( predictions != null && predictions.size() > 0){
+					resultList.clear();
+				}
 				for (int i = 0; i < predictions.size(); i++) {
 					AutoCompleteGooglePlaces.Predictions prediction = predictions.get(i);
 					PlaceObject pOBject = new PlaceObject(prediction.getDescription(),
@@ -248,7 +254,18 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 	}
 
 	public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+		String strNew = "";
+		LatLng latLng = null;
+		try {
+			PlaceObject placeObject = (PlaceObject)view.getTag();
+			if( placeObject.getLat() != 0 ||
+					placeObject.getLng() != 0 ) {
+				latLng = new LatLng(placeObject.getLat(), placeObject.getLng());
+			}
+		strNew = (String) adapterView.getItemAtPosition(position);
+		}catch(Exception e) {
 
+		}
 	}
 
 	@Override
@@ -260,6 +277,10 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 	// This method will be called when a MessageEvent is posted (in the UI thread for Toast)
 	@Subscribe(threadMode = ThreadMode.MAIN)
 	public void onMessageEvent(AutoCompletePlacesMessageEvent event) {
-		Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
+		if (event.isSuccess()) {
+			dataReceived(event.response);
+		} else {
+			Toast.makeText(this, "FAILED TO FETCH DATA", Toast.LENGTH_SHORT).show();
+		}
 	}
 }

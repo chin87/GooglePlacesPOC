@@ -27,7 +27,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class WebCommunicator {
-	private static final String API_KEY = "AIzaSyC0GFzk0HjRHHkYW6nHWnXAyWZ7DcWQy4M";
+	private static final String API_KEY = "AIzaSyAW2TjdhNXvV7sSRva5FU24Vo4VzLV_QQQ";
 	private static final String PLACES_API_BASE = "https://maps.googleapis.com/maps/api/place/";
 
 	public static void getAutoCompleteResults(String input){
@@ -48,12 +48,12 @@ public class WebCommunicator {
 		call.enqueue(new Callback<AutoCompleteGooglePlaces>() {
 			@Override
 			public void onResponse(Call<AutoCompleteGooglePlaces> call, Response<AutoCompleteGooglePlaces> response) {
-				EventBus.getDefault().post(new AutoCompletePlacesMessageEvent("Success YAY!"));
+				EventBus.getDefault().post(new AutoCompletePlacesMessageEvent(AutoCompletePlacesMessageEvent.SUCCESS, response.body()));
 			}
 
 			@Override
 			public void onFailure(Call<AutoCompleteGooglePlaces> call, Throwable t) {
-				EventBus.getDefault().post(new AutoCompletePlacesMessageEvent("Fail NAY!"));
+				EventBus.getDefault().post(new AutoCompletePlacesMessageEvent(AutoCompletePlacesMessageEvent.FAIL, null));
 			}
 		});
 	}
