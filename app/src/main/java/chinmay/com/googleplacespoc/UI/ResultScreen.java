@@ -1,16 +1,22 @@
 package chinmay.com.googleplacespoc.UI;
 
+import android.Manifest;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.databinding.DataBindingUtil;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.text.TextUtils;
@@ -57,6 +63,8 @@ public class ResultScreen extends AppCompatActivity implements PhotosAdaptor.ICl
 	private String latitude;
 	private String longitude;
 	private String address;
+	private String savedUrl;
+	private static final int WRITE_PERMISSION_REQUEST = 1001;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -133,24 +141,33 @@ public class ResultScreen extends AppCompatActivity implements PhotosAdaptor.ICl
 	}
 
 	private void downloadData(String url) {
-		Uri Download_Uri = Uri.parse(url);
-		Calendar c = Calendar.getInstance();
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		String formattedDate = df.format(c.getTime())+".jpg";
+		try {
+			if( isPermission() ) {
+				Uri Download_Uri = Uri.parse(url);
+				Calendar c = Calendar.getInstance();
+				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				String formattedDate = df.format(c.getTime()) + ".jpg";
 
-		downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+				downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
 
-		DownloadManager.Request request = new DownloadManager.Request(Download_Uri);
-		request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
-		request.setAllowedOverRoaming(false);
-		request.setTitle("Downloading image");
-		request.setDescription("Image: "+formattedDate);
-		request.setDestinationInExternalFilesDir(this,Environment.DIRECTORY_DOWNLOADS,formattedDate);
+				DownloadManager.Request request = new DownloadManager.Request(Download_Uri);
+				request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
+				request.setAllowedOverRoaming(false);
+				request.setTitle("Downloading image");
+				request.setDescription("Image: " + formattedDate);
+				request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, formattedDate);
 
-		IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-		registerReceiver(downloadReceiver, filter);
+				IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+				registerReceiver(downloadReceiver, filter);
 
-		downloadReference = downloadManager.enqueue(request);
+				downloadReference = downloadManager.enqueue(request);
+			}else{
+				ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_PERMISSION_REQUEST);
+				savedUrl = url;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -177,10 +194,40 @@ public class ResultScreen extends AppCompatActivity implements PhotosAdaptor.ICl
 		}
 	};
 
-
 	private void showSuccesssnackbar(){
 		Snackbar snackBar = Snackbar.make(activityResultScreenBinding.searchRoot,
 				R.string.str_download_success, Snackbar.LENGTH_SHORT);
 		snackBar.show();
+	}
+
+	private boolean isPermission(){
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			if ( ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+					!= PackageManager.PERMISSION_GRANTED) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		boolean result = true;
+		if (grantResults.length > 0) {
+			for (int permission : grantResults) {
+				if (permission != PackageManager.PERMISSION_GRANTED) {
+					result = false;
+					break;
+				}
+			}
+		}
+		if (grantResults.length > 0 && result) {
+			downloadData(savedUrl);
+		} else {
+			Snackbar snackBar = Snackbar.make(activityResultScreenBinding.searchRoot,
+					getString(R.string.str_permission_denied),
+					Snackbar.LENGTH_LONG);
+			snackBar.show();
+		}
 	}
 }
