@@ -9,6 +9,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -218,17 +219,6 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 				}
 			}*/
 
-			// Extract the Place descriptions from the results
-			/*String stored = prefManager.getLocation1();*//*sharedpreferences.getString("location1","");*//*
-			if (!stored.equals("")) {
-				PlaceObject p = new PlaceObject(stored, "", "", 0, 0);
-				resultList.add(p);
-			}
-			stored = prefManager.getLocation2();*//*sharedpreferences.getString("location2","");*//*
-			if (!stored.equals("")) {
-				PlaceObject p = new PlaceObject(stored, "", "", 0, 0);
-				resultList.add(p);
-			}*/
 			if(autoCompleteGooglePlaces != null &&
 					autoCompleteGooglePlaces.getPredictions() != null && autoCompleteGooglePlaces.getPredictions().size() > 0 ) {
 				List<AutoCompleteGooglePlaces.Predictions> predictions = autoCompleteGooglePlaces.getPredictions();
@@ -244,7 +234,6 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 					resultList.add(pOBject);
 				}
 			}
-			//resultListTemp = resultList;
 			// Assign the data to the FilterResults
 			if (resultList != null && resultList.size() > 0) {
 				googlePlacesAutocompleteAdapter.notifyDataSetChanged();
@@ -269,6 +258,7 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 				latLng = getLatLngFromAddress(strNew);
 			}
 			if( latLng == null ) {
+				showFailedsnackbar();
 				return;
 			}
 			Intent intent = new Intent(this, ResultScreen.class);
@@ -277,7 +267,7 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 			intent.putExtra(ResultScreen.KEY_ADDR, strNew );
 			startActivity(intent);
 		}catch(Exception e) {
-
+			showFailedsnackbar();
 		}
 	}
 
@@ -318,4 +308,9 @@ public class SearchScreen extends AppCompatActivity implements AdapterView.OnIte
 		return latLong;
 	}
 
+	private void showFailedsnackbar(){
+		Snackbar snackBar = Snackbar.make(activitySearchScreenBinding.searchRoot,
+				R.string.str_failed, Snackbar.LENGTH_SHORT);
+		snackBar.show();
+	}
 }

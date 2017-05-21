@@ -1,17 +1,19 @@
 package chinmay.com.googleplacespoc.UI;
 
 import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.databinding.DataBindingUtil;
-import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.text.TextUtils;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -25,7 +27,9 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import chinmay.com.googleplacespoc.Communication.WebCommunicator;
@@ -129,19 +133,23 @@ public class ResultScreen extends AppCompatActivity implements PhotosAdaptor.ICl
 	}
 
 	private void downloadData(String url) {
-		downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
 		Uri Download_Uri = Uri.parse(url);
+		Calendar c = Calendar.getInstance();
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String formattedDate = df.format(c.getTime())+".jpg";
+
+		downloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+
 		DownloadManager.Request request = new DownloadManager.Request(Download_Uri);
-		//Restrict the types of networks over which this download may proceed.
 		request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI | DownloadManager.Request.NETWORK_MOBILE);
-		//Set whether this download may proceed over a roaming connection.
 		request.setAllowedOverRoaming(false);
-		//Set the title of this download, to be displayed in notifications (if enabled).
 		request.setTitle("Downloading image");
-		//Set a description of this download, to be displayed in notifications (if enabled)
-		request.setDescription("Image");
-		//Set the local destination for the downloaded file to a path within the application's external files directory
-		request.setDestinationInExternalFilesDir(this,Environment.DIRECTORY_DOWNLOADS,"1.jpg");
+		request.setDescription("Image: "+formattedDate);
+		request.setDestinationInExternalFilesDir(this,Environment.DIRECTORY_DOWNLOADS,formattedDate);
+
+		IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+		registerReceiver(downloadReceiver, filter);
+
 		downloadReference = downloadManager.enqueue(request);
 	}
 
@@ -152,5 +160,27 @@ public class ResultScreen extends AppCompatActivity implements PhotosAdaptor.ICl
 		mMap.addMarker(new MarkerOptions().position(currentLocation).title(address));
 		mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
 		WebCommunicator.getPhotosOfLocation(currentLocation);
+		googleMap.getUiSettings().setMapToolbarEnabled(false);
+		googleMap.getUiSettings().setZoomControlsEnabled(false);
+	}
+
+	private BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+
+			//check if the broadcast message is for our Enqueued download
+			long referenceId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+			if(downloadReference == referenceId){
+				showSuccesssnackbar();
+			}
+		}
+	};
+
+
+	private void showSuccesssnackbar(){
+		Snackbar snackBar = Snackbar.make(activityResultScreenBinding.searchRoot,
+				R.string.str_download_success, Snackbar.LENGTH_SHORT);
+		snackBar.show();
 	}
 }

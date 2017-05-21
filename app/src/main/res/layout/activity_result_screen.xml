@@ -3,6 +3,7 @@
         xmlns:map="http://schemas.android.com/apk/res-auto">
 
     <RelativeLayout
+        android:id="@+id/searchRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -20,6 +21,7 @@
             android:layout_alignParentBottom="true"
             android:id="@+id/rvPhotos"
             android:layout_width="match_parent"
-            android:layout_height="100dp"/>
+            android:layout_height="100dp"
+            android:background="@color/colorPrimary"/>
     </RelativeLayout>
 </layout>

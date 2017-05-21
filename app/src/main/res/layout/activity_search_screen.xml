@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <android.support.constraint.ConstraintLayout
+        android:id="@+id/search_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="chinmay.com.googleplacespoc.UI.SearchScreen">
